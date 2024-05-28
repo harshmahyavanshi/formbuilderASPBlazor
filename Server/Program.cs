@@ -1,9 +1,25 @@
 using Microsoft.AspNetCore.ResponseCompression;
+using Database.Context;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
@@ -27,7 +43,8 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+// Enable CORS (if needed)
+app.UseCors("AllowAllOrigins");
 
 app.MapRazorPages();
 app.MapControllers();

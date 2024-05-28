@@ -12,6 +12,7 @@
 @code {
 
     [Inject]
+
     public IJSRuntime jsRuntime { get; set; }
     private IJSObjectReference? module;
     DotNetObjectReference<SurveyJsBuilder> ObjectReference;
@@ -28,8 +29,18 @@
     [JSInvokable("SaveSurvey")]
     public async Task SaveQuestions(string surveyContent)
     {
+        var response = await Http.PostAsJsonAsync("api/survey", surveyContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Your answer has been saved successfully!");
+        }
+        else
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Failed to save your answer.");
+        }
         // place your code here.. to make an API call and save the surveyJson.
-        await Jsr.InvokeVoidAsync("alert", "Survey Builder: " + surveyContent);
+       // await Jsr.InvokeVoidAsync("alert", "Survey Builder: " + surveyContent);
 
     }
 

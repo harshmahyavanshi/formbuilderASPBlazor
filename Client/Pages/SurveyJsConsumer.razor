@@ -1,4 +1,4 @@
-﻿@page "/consumer"
+﻿@page "/consumer/{Id:int}"
 
 @inject HttpClient _httpClient
 @inject IJSRuntime jsRuntime
@@ -14,20 +14,32 @@
 
 @code {
     [Parameter]
-    public string Id { get; set; }
+    public int Id { get; set; }
 
     bool isLoading = true;
     private IJSObjectReference? module;
     string builderJson = "";
     DotNetObjectReference<SurveyJsConsumer> ObjectReference;
+    private Survey surveys;
+
+    public class Survey
+    {
+        public int Id { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+  
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        surveys = await Http.GetFromJsonAsync<Survey>($"api/survey/{Id}");
         if (firstRender)
         {
             ObjectReference = DotNetObjectReference.Create(this);
 
             // make an api call to get the questionJson, for now let's use some static json..
-            builderJson = "{\"pages\":[{\"name\":\"page1\",\"elements\":[{\"type\":\"text\",\"name\":\"YourFirstQuestion..\",\"title\":\"What is your Name?\"},{\"type\":\"dropdown\",\"name\":\"question1\",\"title\":\"What is your Gender?\",\"choices\":[{\"value\":\"Item1\",\"text\":\"Male\"},{\"value\":\"Item2\",\"text\":\"Female\"},{\"value\":\"Item3\",\"text\":\"Other\"}]}]}]}";
+             builderJson = surveys.Content ; 
+            //"{\"pages\":[{\"name\":\"page1\",\"elements\":[{\"type\":\"text\",\"name\":\"YourFirstQuestion..\",\"title\":\"What is your Name?\"},{\"type\":\"dropdown\",\"name\":\"question1\",\"title\":\"What is your Gender?\",\"choices\":[{\"value\":\"Item1\",\"text\":\"Male\"},{\"value\":\"Item2\",\"text\":\"Female\"},{\"value\":\"Item3\",\"text\":\"Other\"}]}]}]}";
             await jsRuntime.InvokeVoidAsync("AssessmentHelper.ShowAssessment", ObjectReference, builderJson, "");
             StateHasChanged();
         }
@@ -37,8 +49,17 @@
     [JSInvokable("SaveAssessment")]
     public async Task SaveAssessment(string surveyContent)
     {
+        var response = await Http.PostAsJsonAsync($"api/SurveyResult/{Id}", surveyContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Your Answer in Json Format: " + surveyContent);
+        }
+        else
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Failed to save your answer.");
+        }
         // your code to make an API call and save the answer.
-        await jsRuntime.InvokeVoidAsync("alert", "Your Answer in Json Format: "+surveyContent);
         
     }
     public void Dispose()

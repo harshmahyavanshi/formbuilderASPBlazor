@@ -1,0 +1,61 @@
+﻿@page "/allforms"
+@inject HttpClient Http
+
+@inject NavigationManager Navigation
+
+<h3>Survey Details</h3>
+
+<h3>Survey List</h3>
+
+@if (surveys == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var survey in surveys)
+        {
+            <a class="list-group-item list-group-item-action btn btn-primary mb-2" href="consumer/@survey.Id">
+                @survey.Id (Created at: @survey.CreatedAt.ToString("yyyy-MM-dd"))
+            </a>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private IEnumerable<Survey> surveys;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            surveys = await Http.GetFromJsonAsync<IEnumerable<Survey>>("api/survey");
+            
+        }
+        catch (HttpRequestException httpEx)
+        {
+            // Handle request error
+            Console.WriteLine($"Request error: {httpEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            // Handle general error
+            Console.WriteLine($"Error fetching survey: {ex.Message}");
+        }
+    }
+
+    private void GenerateReport()
+    {
+        Navigation.NavigateTo($"api/survey/GenerateReport/{Id}");
+    }
+
+    public class Survey
+    {
+        public int Id { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}
